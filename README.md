@@ -2,6 +2,8 @@
 
 React + Vite app for a 120-day system design study plan: dashboard (graph, calendar, tasks), roadmap, progress analytics, and knowledge notes with per-subtopic editing.
 
+> Deploy **this repo on Vercel only**. The API runs on **Render** — see [backend DEPLOY.md](https://github.com/kammari-venkatesh/system-design-todobackend/blob/main/DEPLOY.md).
+
 ## Requirements
 
 - Node.js 18+
@@ -24,7 +26,8 @@ App runs at `http://localhost:5173`. In development, API requests are proxied to
 
 **Local dev:** leave `VITE_API_URL` empty — Vite proxies `/api` and `/uploads`.
 
-**Production:** set to your deployed backend, e.g. `https://system-design-todobackend.onrender.com`.
+**Production:** set to your **Render** backend URL, e.g. `https://system-design-todobackend.onrender.com`.  
+Do **not** use a `*.vercel.app` URL for the API — the backend must be on Render.
 
 ## Scripts
 
