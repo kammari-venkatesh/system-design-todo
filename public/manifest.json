@@ -1,0 +1,18 @@
+{
+  "name": "System Design Study Plan",
+  "short_name": "StudyPlan",
+  "description": "Track your system design study progress",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#2563EB",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
