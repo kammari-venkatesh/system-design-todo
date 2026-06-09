@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node -e \"console.error('\\nThis is the FRONTEND repo. Do not run it on Render.\\n\\n  Backend (Render): https://github.com/kammari-venkatesh/system-design-todobackend\\n  Frontend (Vercel):  https://github.com/kammari-venkatesh/system-design-todo\\n'); process.exit(1)\""
   },
   "dependencies": {
     "@tiptap/extension-code-block-lowlight": "^3.26.0",
