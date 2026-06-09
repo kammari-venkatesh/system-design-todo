@@ -45,10 +45,9 @@ export default function SettingsPage() {
         <h3>Keyboard shortcuts</h3>
         <ul className="shortcut-list">
           <li><span>Go to Dashboard</span><kbd>d</kbd></li>
+          <li><span>Go to Roadmap</span><kbd>r</kbd></li>
+          <li><span>Go to Progress</span><kbd>p</kbd></li>
         </ul>
-        <p className="settings-row-desc" style={{ marginTop: 12 }}>
-          Use the jump links at the top of the Dashboard to scroll to Roadmap, Progress, and Notes.
-        </p>
       </div>
 
       <div className="card settings-group">

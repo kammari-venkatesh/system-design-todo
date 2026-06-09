@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: '◻', end: true },
+  { to: '/roadmap', label: 'Roadmap', icon: '☰', end: false },
+  { to: '/progress', label: 'Progress', icon: '◉', end: false },
   { to: '/bookmarks', label: 'Bookmarks', icon: '★', end: false },
   { to: '/settings', label: 'Settings', icon: '⚙', end: false },
 ];
@@ -23,6 +25,8 @@ export default function AppLayout() {
     function onKey(e) {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       if (e.key === 'd') navigate('/');
+      if (e.key === 'r') navigate('/roadmap');
+      if (e.key === 'p') navigate('/progress');
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

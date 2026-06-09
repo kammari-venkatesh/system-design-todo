@@ -1,142 +1,89 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useProgress } from '../../context/ProgressContext';
 import {
   dailyNoteId,
   searchNotes,
-  sortNotesForDisplay,
-  findRelatedNotes,
+  sortNotesForDay,
   extractTagsFromText,
   tipTapDocToPlainText,
-  DAILY_SECTIONS,
+  isDaySummaryNote,
 } from '../../utils/notesHelpers';
-import NotesSidebar from './NotesSidebar';
+import NotesMasterList from './NotesMasterList';
 import NotesEditor from './NotesEditor';
 
 export default function KnowledgeNotesWorkspace({ selectedDayNum }) {
   const {
     progress,
+    analytics,
     upsertNote,
-    ensureDailyNote,
-    toggleNotePin,
-    toggleNoteFavorite,
+    ensureDayNotes,
     uploadNoteFile,
     notesSaveStatus,
     notesLastSavedAt,
   } = useProgress();
 
-  const [expanded, setExpanded] = useState(() => localStorage.getItem('notes_expanded') !== 'false');
   const [activeNoteId, setActiveNoteId] = useState(null);
-  const [category, setCategory] = useState('recent');
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState('list');
-  const [activeTag, setActiveTag] = useState(null);
 
   const knowledgeNotes = progress.knowledgeNotes || {};
+  const planStartDate = analytics?.planStartDate;
+  const selectedDay = analytics?.allDays?.find((d) => d._n === selectedDayNum);
 
   useEffect(() => {
     if (selectedDayNum) {
-      const id = dailyNoteId(selectedDayNum);
-      ensureDailyNote(selectedDayNum);
-      setActiveNoteId(id);
+      ensureDayNotes(selectedDayNum);
+      setActiveNoteId(dailyNoteId(selectedDayNum));
     }
-  }, [selectedDayNum, ensureDailyNote]);
-
-  useEffect(() => {
-    localStorage.setItem('notes_expanded', String(expanded));
-  }, [expanded]);
+  }, [selectedDayNum, ensureDayNotes]);
 
   const displayedNotes = useMemo(() => {
-    let list = searchQuery.trim()
-      ? searchNotes(knowledgeNotes, searchQuery)
-      : sortNotesForDisplay(knowledgeNotes, category);
-    if (activeTag) {
-      list = list.filter((n) => n.tags?.includes(activeTag));
+    if (!selectedDayNum) return [];
+    if (searchQuery.trim()) {
+      return searchNotes(knowledgeNotes, searchQuery).filter((n) => n.dayNum === selectedDayNum);
     }
-    return list;
-  }, [knowledgeNotes, searchQuery, category, activeTag]);
+    return sortNotesForDay(knowledgeNotes, selectedDayNum);
+  }, [knowledgeNotes, searchQuery, selectedDayNum]);
 
   const activeNote = activeNoteId ? knowledgeNotes[activeNoteId] : null;
 
-  const relatedNotes = useMemo(
-    () => findRelatedNotes(knowledgeNotes, activeNote),
-    [knowledgeNotes, activeNote]
-  );
-
   function handleUpdate(note) {
-    const textParts = [note.summary || ''];
-    if (note.type === 'daily') {
-      DAILY_SECTIONS.forEach(({ key }) => {
-        textParts.push(tipTapDocToPlainText(note.sections?.[key]));
-      });
-    } else {
-      textParts.push(tipTapDocToPlainText(note.body));
-    }
-    const tags = extractTagsFromText(textParts.join(' '));
+    const text = isDaySummaryNote(note)
+      ? (note.summary || '')
+      : tipTapDocToPlainText(note.body);
+    const tags = extractTagsFromText(text);
     upsertNote(note.id, { ...note, tags });
   }
 
-  function toggleExpanded() {
-    setExpanded((e) => !e);
-  }
-
   return (
-    <div className="dashboard-section notes-workspace-wrap" id="notes">
-      <div className="notes-workspace-header">
-        <div>
-          <h2>Knowledge Notes</h2>
-          <p className="subtitle">Your personal study knowledge base</p>
-        </div>
-        <button type="button" className="btn-secondary" onClick={toggleExpanded}>
-          {expanded ? 'Collapse Notes' : 'Expand Notes'}
-        </button>
+    <section className="dashboard-section notes-app-wrap" id="notes">
+      <div className="notes-app-header">
+        <h2>Knowledge Notes</h2>
+        <p className="subtitle">
+          {selectedDay
+            ? `Day ${selectedDayNum}: ${selectedDay.topic} — summary + one note per subtopic`
+            : 'Select a study day on the calendar to open its notes'}
+        </p>
       </div>
 
-      <AnimatePresence initial={false}>
-        {expanded ? (
-          <motion.div
-            className="notes-workspace card"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <div className="notes-workspace-grid">
-              <NotesSidebar
-                notes={displayedNotes}
-                activeNoteId={activeNoteId}
-                category={category}
-                onCategoryChange={(c) => { setCategory(c); setActiveTag(null); }}
-                searchQuery={searchQuery}
-                onSearch={setSearchQuery}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                onSelect={setActiveNoteId}
-                onTogglePin={toggleNotePin}
-                onToggleFavorite={toggleNoteFavorite}
-              />
-              <NotesEditor
-                note={activeNote}
-                saveStatus={notesSaveStatus}
-                lastSavedAt={notesLastSavedAt}
-                relatedNotes={relatedNotes}
-                onUpdate={handleUpdate}
-                onUpload={uploadNoteFile}
-                onSelectNote={setActiveNoteId}
-              />
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            className="notes-collapsed-bar"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            Notes collapsed — click Expand Notes to continue writing.
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      <div className="notes-app card">
+        <NotesMasterList
+          notes={displayedNotes}
+          activeNoteId={activeNoteId}
+          planStartDate={planStartDate}
+          searchQuery={searchQuery}
+          onSearch={setSearchQuery}
+          onSelect={setActiveNoteId}
+          selectedDayNum={selectedDayNum}
+          dayTopic={selectedDay?.topic}
+        />
+        <NotesEditor
+          note={activeNote}
+          saveStatus={notesSaveStatus}
+          lastSavedAt={notesLastSavedAt}
+          onUpdate={handleUpdate}
+          onUpload={uploadNoteFile}
+        />
+      </div>
+    </section>
   );
 }

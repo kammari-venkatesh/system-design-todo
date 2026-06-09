@@ -1,7 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { api } from '../api/client';
 import { assignDayNumbers } from '../utils/planHelpers';
-import { buildDailyNoteTemplate, dailyNoteId, migrateDayNotesToKnowledge } from '../utils/notesHelpers';
+import {
+  buildDailySummaryNote,
+  buildTaskNote,
+  dailyNoteId,
+  taskNoteId,
+  migrateLegacyDailyNote,
+  migrateDayNotesToKnowledge,
+} from '../utils/notesHelpers';
 
 const ProgressContext = createContext(null);
 
@@ -128,21 +135,55 @@ export function ProgressProvider({ children }) {
     [persistNote]
   );
 
-  const ensureDailyNote = useCallback(
+  const ensureDayNotes = useCallback(
     (dayNum) => {
-      const id = dailyNoteId(dayNum);
+      const day = analytics?.allDays?.find((d) => d._n === dayNum)
+        || plan.flatMap((w) => w.days).find((d) => d._n === dayNum);
+      if (!day) return;
+
       setProgress((prev) => {
-        if (prev.knowledgeNotes?.[id]) return prev;
-        const day = analytics?.allDays?.find((d) => d._n === dayNum)
-          || plan.flatMap((w) => w.days).find((d) => d._n === dayNum);
-        if (!day) return prev;
-        const note = buildDailyNoteTemplate(day);
-        persistNote(id, note);
-        return { ...prev, knowledgeNotes: { ...prev.knowledgeNotes, [id]: note } };
+        const existing = prev.knowledgeNotes || {};
+        const patch = {};
+
+        const summaryId = dailyNoteId(dayNum);
+        if (existing[summaryId]) {
+          const migrated = migrateLegacyDailyNote(existing[summaryId]);
+          if (migrated.summary !== existing[summaryId].summary
+            || JSON.stringify(migrated.body) !== JSON.stringify(existing[summaryId].body)) {
+            patch[summaryId] = migrated;
+          }
+        } else {
+          patch[summaryId] = buildDailySummaryNote(day);
+        }
+
+        (day.tasks || []).forEach((task, i) => {
+          const id = taskNoteId(dayNum, i);
+          if (!existing[id]) patch[id] = buildTaskNote(day, i, task);
+        });
+
+        if (!Object.keys(patch).length) return prev;
+
+        if (noteSaveTimer.current) clearTimeout(noteSaveTimer.current);
+        setNotesSaveStatus('saving');
+        noteSaveTimer.current = setTimeout(async () => {
+          try {
+            const updated = await api.patchProgress({ knowledgeNotes: patch });
+            setProgress((p) => ({ ...p, knowledgeNotes: updated.knowledgeNotes || p.knowledgeNotes }));
+            setNotesSaveStatus('saved');
+            setNotesLastSavedAt(new Date().toISOString());
+          } catch (e) {
+            console.error(e);
+            setNotesSaveStatus('idle');
+          }
+        }, 300);
+
+        return { ...prev, knowledgeNotes: { ...existing, ...patch } };
       });
     },
-    [analytics, plan, persistNote]
+    [analytics, plan]
   );
+
+  const ensureDailyNote = ensureDayNotes;
 
   const toggleNotePin = useCallback(
     (noteId) => {
@@ -259,6 +300,7 @@ export function ProgressProvider({ children }) {
       updateProgress,
       upsertNote,
       ensureDailyNote,
+      ensureDayNotes,
       toggleNotePin,
       toggleNoteFavorite,
       uploadNoteFile,
@@ -268,7 +310,7 @@ export function ProgressProvider({ children }) {
     [
       phases, plan, progress, analytics, loading, error,
       toggleCheck, toggleDayDone, toggleBookmark, refreshAnalytics, updateProgress,
-      upsertNote, ensureDailyNote, toggleNotePin, toggleNoteFavorite, uploadNoteFile,
+      upsertNote, ensureDailyNote, ensureDayNotes, toggleNotePin, toggleNoteFavorite, uploadNoteFile,
       notesSaveStatus, notesLastSavedAt,
     ]
   );

@@ -1,3 +1,5 @@
+import { dayNumToDate } from './schedule';
+
 export const DAILY_SECTIONS = [
   { key: 'keyConcepts', label: 'Key Concepts', hint: 'Things learned today.' },
   { key: 'importantPoints', label: 'Important Points', hint: 'Short summary.' },
@@ -8,17 +10,32 @@ export const DAILY_SECTIONS = [
   { key: 'personalThoughts', label: 'Personal Thoughts', hint: 'Observations and learning experiences.' },
 ];
 
-export const NOTE_CATEGORIES = [
-  { id: 'recent', label: 'Recent Notes' },
+export const NOTE_FOLDERS = [
+  { id: 'all', label: 'All Notes' },
+  { id: 'daily', label: 'Daily Notes' },
+  { id: 'recent', label: 'Recent' },
   { id: 'favorites', label: 'Favorites' },
   { id: 'pinned', label: 'Pinned' },
-  { id: 'daily', label: 'Daily Notes' },
-  { id: 'topic', label: 'Topic Notes' },
-  { id: 'revision', label: 'Revision Notes' },
+  { id: 'revision', label: 'Revision' },
 ];
+
+/** @deprecated use NOTE_FOLDERS */
+export const NOTE_CATEGORIES = NOTE_FOLDERS;
 
 export function dailyNoteId(dayNum) {
   return `day-${dayNum}`;
+}
+
+export function taskNoteId(dayNum, taskIndex) {
+  return `day-${dayNum}-task-${taskIndex}`;
+}
+
+export function isDaySummaryNote(note) {
+  return note?.type === 'daily';
+}
+
+export function isTaskNote(note) {
+  return note?.type === 'task';
 }
 
 export function emptyTipTapDoc() {
@@ -54,17 +71,45 @@ export function extractTagsFromText(text) {
   return [...new Set(matches.map((t) => t.slice(1)))];
 }
 
-export function getNotePreview(note) {
-  const parts = [];
-  if (note.summary?.trim()) parts.push(note.summary.trim());
+export function hasLegacySectionContent(note) {
+  if (note.summary?.trim()) return true;
+  return DAILY_SECTIONS.some(({ key }) => tipTapDocToPlainText(note.sections?.[key]));
+}
+
+export function resolveNoteBody(note) {
+  if (!note) return emptyTipTapDoc();
+  if (tipTapDocToPlainText(note.body)) return note.body;
+
+  const blocks = [];
+  if (note.summary?.trim()) {
+    blocks.push({ type: 'paragraph', content: [{ type: 'text', text: note.summary.trim() }] });
+  }
   DAILY_SECTIONS.forEach(({ key }) => {
-    const t = tipTapDocToPlainText(note.sections?.[key]);
-    if (t) parts.push(t);
+    const text = tipTapDocToPlainText(note.sections?.[key]);
+    if (text) {
+      blocks.push({ type: 'paragraph', content: [{ type: 'text', text }] });
+    }
   });
-  const body = tipTapDocToPlainText(note.body);
-  if (body) parts.push(body);
-  const text = parts.join(' ').replace(/\s+/g, ' ').trim();
+  if (blocks.length) return { type: 'doc', content: blocks };
+  return note.body || emptyTipTapDoc();
+}
+
+export function getNotePreview(note) {
+  let text = '';
+  if (isDaySummaryNote(note)) {
+    text = (note.summary || '').trim();
+    if (!text) text = tipTapDocToPlainText(resolveNoteBody(note));
+  } else {
+    text = tipTapDocToPlainText(resolveNoteBody(note));
+  }
+  text = text.replace(/\s+/g, ' ').trim();
+  if (!text) return '';
   return text.slice(0, 120) + (text.length > 120 ? '…' : '');
+}
+
+export function getNoteListTitle(note) {
+  if (isDaySummaryNote(note)) return note.topic || note.title || `Day ${note.dayNum}`;
+  return note.subtopic || note.title || `Task ${(note.taskIndex ?? 0) + 1}`;
 }
 
 export function filterNotesByCategory(notes, categoryId) {
@@ -74,10 +119,10 @@ export function filterNotesByCategory(notes, categoryId) {
       return list.filter((n) => n.favorite);
     case 'pinned':
       return list.filter((n) => n.pinned);
+    case 'all':
+      return [...list].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
     case 'daily':
-      return list.filter((n) => n.type === 'daily');
-    case 'topic':
-      return list.filter((n) => n.type === 'topic' || n.type === 'week');
+      return list.filter((n) => n.type === 'daily' || n.type === 'task');
     case 'revision':
       return list.filter((n) => n.type === 'revision' || n.tags?.includes('revision'));
     default:
@@ -92,6 +137,7 @@ export function searchNotes(notes, query) {
     const haystack = [
       note.title,
       note.topic,
+      note.subtopic,
       note.summary,
       note.tags?.join(' '),
       `week ${note.week}`,
@@ -105,13 +151,11 @@ export function searchNotes(notes, query) {
   });
 }
 
-export function sortNotesForDisplay(notes, categoryId) {
-  const filtered = categoryId === 'recent'
-    ? filterNotesByCategory(notes, 'recent')
-    : filterNotesByCategory(notes, categoryId);
+export function sortNotesForDisplay(notes, categoryId, planStartDate) {
+  const filtered = filterNotesByCategory(notes, categoryId);
   return filtered.sort((a, b) => {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-    return new Date(b.updatedAt) - new Date(a.updatedAt);
+    return getNoteSortDate(b, planStartDate) - getNoteSortDate(a, planStartDate);
   });
 }
 
@@ -142,12 +186,8 @@ export function findRelatedNotes(notes, activeNote, limit = 3) {
     .map(({ note }) => note);
 }
 
-export function buildDailyNoteTemplate(day) {
+export function buildDailySummaryNote(day) {
   const now = new Date().toISOString();
-  const sections = {};
-  DAILY_SECTIONS.forEach(({ key }) => {
-    sections[key] = emptyTipTapDoc();
-  });
   return {
     id: dailyNoteId(day._n),
     type: 'daily',
@@ -161,12 +201,68 @@ export function buildDailyNoteTemplate(day) {
     favorite: false,
     tags: [],
     relatedNoteIds: [],
-    sections,
+    sections: {},
     body: emptyTipTapDoc(),
     attachments: [],
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/** @deprecated use buildDailySummaryNote */
+export function buildDailyNoteTemplate(day) {
+  return buildDailySummaryNote(day);
+}
+
+export function buildTaskNote(day, taskIndex, subtopic) {
+  const now = new Date().toISOString();
+  return {
+    id: taskNoteId(day._n, taskIndex),
+    type: 'task',
+    dayNum: day._n,
+    week: day.week,
+    phase: day.phase,
+    topic: day.topic,
+    subtopic,
+    taskIndex,
+    title: subtopic,
+    summary: '',
+    pinned: false,
+    favorite: false,
+    tags: [],
+    relatedNoteIds: [],
+    sections: {},
+    body: emptyTipTapDoc(),
+    attachments: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+export function migrateLegacyDailyNote(note) {
+  if (!isDaySummaryNote(note)) return note;
+  if (note.summary?.trim()) return note;
+  const fromBody = tipTapDocToPlainText(note.body);
+  if (!fromBody) return note;
+  return { ...note, summary: fromBody, body: emptyTipTapDoc() };
+}
+
+export function buildDayNotesBundle(day) {
+  const notes = {};
+  notes[dailyNoteId(day._n)] = buildDailySummaryNote(day);
+  (day.tasks || []).forEach((task, i) => {
+    notes[taskNoteId(day._n, i)] = buildTaskNote(day, i, task);
+  });
+  return notes;
+}
+
+export function sortNotesForDay(knowledgeNotes, dayNum) {
+  const dayNotes = Object.values(knowledgeNotes || {}).filter((n) => n.dayNum === dayNum);
+  const summary = dayNotes.find((n) => isDaySummaryNote(n));
+  const tasks = dayNotes
+    .filter((n) => isTaskNote(n))
+    .sort((a, b) => (a.taskIndex ?? 0) - (b.taskIndex ?? 0));
+  return [summary, ...tasks].filter(Boolean);
 }
 
 export function migrateDayNotesToKnowledge(dayNotes, allDays) {
@@ -194,6 +290,96 @@ export function journalGroupLabel(updatedAt) {
   const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
-  if (diffDays <= 7) return `${diffDays} days ago`;
+  if (diffDays <= 7) return 'Previous 7 Days';
+  if (diffDays <= 30) return 'Previous 30 Days';
+  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+export function getNoteSortDate(note, planStartDate) {
+  if (note.dayNum && planStartDate) {
+    return dayNumToDate(note.dayNum, planStartDate);
+  }
+  return new Date(note.updatedAt || note.createdAt || Date.now());
+}
+
+export function formatNoteDisplayDate(note, planStartDate) {
+  let d = note.dayNum && planStartDate
+    ? dayNumToDate(note.dayNum, planStartDate)
+    : new Date(note.updatedAt || Date.now());
+  const datePart = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const timePart = new Date(note.updatedAt || d).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  return `${datePart} at ${timePart}`;
+}
+
+export function formatNoteListDate(note, planStartDate) {
+  const d = note.dayNum && planStartDate
+    ? dayNumToDate(note.dayNum, planStartDate)
+    : new Date(note.updatedAt || Date.now());
+  const now = new Date();
+  const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) {
+    return new Date(note.updatedAt || d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'short' });
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function startOfDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+export function periodLabelForNote(note, planStartDate) {
+  const d = note.dayNum && planStartDate
+    ? dayNumToDate(note.dayNum, planStartDate)
+    : new Date(note.updatedAt || Date.now());
+  const now = new Date();
+  const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / (1000 * 60 * 60 * 24));
+  if (diffDays <= 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays <= 7) return 'Previous 7 Days';
+  if (diffDays <= 30) return 'Previous 30 Days';
+  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+export function groupNotesByPeriod(notes, planStartDate) {
+  const map = new Map();
+  const order = ['Today', 'Yesterday', 'Previous 7 Days', 'Previous 30 Days'];
+  [...notes]
+    .sort((a, b) => getNoteSortDate(b, planStartDate) - getNoteSortDate(a, planStartDate))
+    .forEach((note) => {
+      const label = periodLabelForNote(note, planStartDate);
+      if (!map.has(label)) map.set(label, []);
+      map.get(label).push(note);
+    });
+
+  const entries = [...map.entries()];
+  entries.sort(([a], [b]) => {
+    const ai = order.indexOf(a);
+    const bi = order.indexOf(b);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return b.localeCompare(a);
+  });
+  return entries.map(([label, items]) => ({ label, items }));
+}
+
+export function getFolderCounts(notes) {
+  const all = Object.values(notes || {});
+  return NOTE_FOLDERS.reduce((acc, folder) => {
+    if (folder.id === 'all') acc[folder.id] = all.length;
+    else acc[folder.id] = filterNotesByCategory(notes, folder.id).length;
+    return acc;
+  }, {});
+}
+
+export function getFolderLabel(folderId) {
+  return NOTE_FOLDERS.find((f) => f.id === folderId)?.label || 'Notes';
 }

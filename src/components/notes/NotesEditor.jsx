@@ -1,81 +1,66 @@
-import { DAILY_SECTIONS } from '../../utils/notesHelpers';
-import NoteSummaryCard from './NoteSummaryCard';
-import CollapsibleSection from './CollapsibleSection';
-import RelatedNotes from './RelatedNotes';
+import { resolveNoteBody, isDaySummaryNote } from '../../utils/notesHelpers';
+import RichTextEditor from './RichTextEditor';
 import SaveStatus from './SaveStatus';
 
 export default function NotesEditor({
   note,
   saveStatus,
   lastSavedAt,
-  relatedNotes,
   onUpdate,
   onUpload,
-  onSelectNote,
 }) {
   if (!note) {
     return (
-      <div className="notes-editor notes-editor-empty">
-        <p>Select a note from the sidebar or pick a day on the calendar.</p>
+      <div className="notes-detail notes-detail-empty">
+        <div className="notes-detail-empty-inner">
+          <p>Select a note from the list</p>
+          <span>Main topic = summary only · Subtopics = full notes</span>
+        </div>
       </div>
     );
   }
 
-  function patch(partial) {
-    onUpdate({ ...note, ...partial, updatedAt: new Date().toISOString() });
+  function handleBodyChange(body) {
+    onUpdate({ ...note, body, updatedAt: new Date().toISOString() });
   }
 
-  function patchSection(key, content) {
-    patch({ sections: { ...note.sections, [key]: content } });
+  function handleSummaryChange(summary) {
+    onUpdate({ ...note, summary, updatedAt: new Date().toISOString() });
   }
+
+  const isSummary = isDaySummaryNote(note);
 
   return (
-    <div className="notes-editor">
-      <div className="notes-editor-header">
-        <div>
-          <h3>{note.title}</h3>
-          {note.type === 'daily' && (
-            <p className="subtitle">
-              Day {note.dayNum} · {note.topic} · Week {note.week} · Phase {note.phase}
-            </p>
-          )}
-        </div>
+    <div className="notes-detail">
+      <div className="notes-detail-toolbar">
+        <span className="notes-detail-kind">{isSummary ? 'Summary' : 'Subtopic note'}</span>
         <SaveStatus status={saveStatus} lastSavedAt={lastSavedAt} />
       </div>
-
-      <NoteSummaryCard summary={note.summary} onChange={(summary) => patch({ summary })} />
-
-      {note.tags?.length > 0 && (
-        <div className="note-tags">
-          {note.tags.map((tag) => (
-            <span key={tag} className="note-tag">#{tag}</span>
-          ))}
-        </div>
-      )}
-
-      {note.type === 'daily' ? (
-        <div className="notes-sections">
-          {DAILY_SECTIONS.map(({ key, label, hint }) => (
-            <CollapsibleSection
-              key={key}
-              title={label}
-              hint={hint}
-              content={note.sections?.[key]}
-              onChange={(content) => patchSection(key, content)}
+      <div className="notes-detail-body notes-detail-body--blank">
+        {isSummary ? (
+          <div className="notes-summary-editor">
+            <h2 className="notes-summary-topic">{note.topic}</h2>
+            <p className="notes-summary-hint">Write a short summary for this main topic only.</p>
+            <textarea
+              className="notes-summary-textarea"
+              value={note.summary || ''}
+              onChange={(e) => handleSummaryChange(e.target.value)}
+              placeholder="Key takeaways for the day…"
+            />
+          </div>
+        ) : (
+          <>
+            <h2 className="notes-task-title">{note.subtopic || note.title}</h2>
+            <RichTextEditor
+              key={note.id}
+              content={resolveNoteBody(note)}
+              onChange={handleBodyChange}
+              placeholder="Start writing…"
               onUpload={onUpload}
             />
-          ))}
-        </div>
-      ) : (
-        <CollapsibleSection
-          title="Note"
-          content={note.body}
-          onChange={(body) => patch({ body })}
-          onUpload={onUpload}
-        />
-      )}
-
-      <RelatedNotes notes={relatedNotes} onSelect={onSelectNote} />
+          </>
+        )}
+      </div>
     </div>
   );
 }

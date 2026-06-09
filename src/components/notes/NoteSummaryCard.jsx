@@ -1,14 +1,13 @@
 export default function NoteSummaryCard({ summary, onChange }) {
   return (
-    <div className="note-summary-card">
-      <h4>Quick Summary</h4>
-      <p className="note-summary-hint">Write 3–5 important points for quick review.</p>
+    <div className="notes-summary">
+      <label className="notes-summary-label">Quick Summary</label>
       <textarea
-        className="note-summary-input"
+        className="notes-summary-input"
         value={summary || ''}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Enter your summary…"
-        rows={3}
+        placeholder="Key points for quick review…"
+        rows={2}
       />
     </div>
   );

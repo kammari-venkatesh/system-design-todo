@@ -1,60 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useProgress } from '../context/ProgressContext';
 import ProgressAreaChart from '../components/dashboard/ProgressAreaChart';
 import AppleCalendar from '../components/dashboard/AppleCalendar';
 import TodayTasksPanel from '../components/dashboard/TodayTasksPanel';
-import RoadmapSection from '../components/dashboard/RoadmapSection';
-import ProgressSection from '../components/dashboard/ProgressSection';
 import KnowledgeNotesWorkspace from '../components/notes/KnowledgeNotesWorkspace';
-
-function useHashScroll() {
-  const location = useLocation();
-  useEffect(() => {
-    if (!location.hash) return;
-    const id = location.hash.replace('#', '');
-    const el = document.getElementById(id);
-    if (el) {
-      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-    }
-  }, [location.hash, location.pathname]);
-}
+import { useSelectedDay } from '../hooks/useSelectedDay';
 
 export default function DashboardPage() {
-  const location = useLocation();
-  const { analytics, loading, ensureDailyNote } = useProgress();
-  const [selectedDayNum, setSelectedDayNum] = useState(null);
-  useHashScroll();
-
-  useEffect(() => {
-    if (location.state?.openDay) {
-      const dayNum = location.state.openDay;
-      setSelectedDayNum(dayNum);
-      ensureDailyNote(dayNum);
-      if (location.state.scrollNotes) {
-        setTimeout(() => {
-          document.getElementById('notes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 200);
-      }
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state, ensureDailyNote]);
-
-  useEffect(() => {
-    if (analytics && selectedDayNum === null) {
-      setSelectedDayNum(analytics.scheduledToday ?? analytics.currentDayNum);
-    }
-  }, [analytics, selectedDayNum]);
-
-  function handleSelectDay(dayNum) {
-    setSelectedDayNum(dayNum);
-    ensureDailyNote(dayNum);
-  }
+  const { analytics, loading, activeDay, handleSelectDay } = useSelectedDay();
 
   function openNotesForDay(dayNum) {
     handleSelectDay(dayNum);
-    const notesEl = document.getElementById('notes');
-    if (notesEl) notesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      document.getElementById('notes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   }
 
   if (loading || !analytics) {
@@ -67,8 +24,6 @@ export default function DashboardPage() {
     );
   }
 
-  const activeDay = selectedDayNum ?? analytics.scheduledToday ?? analytics.currentDayNum;
-
   return (
     <div className="page unified-dashboard">
       <div className="page-header">
@@ -78,13 +33,6 @@ export default function DashboardPage() {
             Day {analytics.currentDayNum} of 120 · {analytics.overallProgress}% complete
           </p>
         </div>
-        <nav className="dashboard-jump-nav">
-          <a href="#graph">Graph</a>
-          <a href="#calendar">Calendar</a>
-          <a href="#roadmap">Roadmap</a>
-          <a href="#progress">Progress</a>
-          <a href="#notes">Notes</a>
-        </nav>
       </div>
 
       <section className="dashboard-section" id="graph">
@@ -106,7 +54,7 @@ export default function DashboardPage() {
               handleSelectDay(dayNum);
               setTimeout(() => {
                 document.getElementById('notes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 100);
+              }, 80);
             }}
           />
           <TodayTasksPanel
@@ -116,14 +64,6 @@ export default function DashboardPage() {
           />
         </div>
       </section>
-
-      <div className="section-divider">
-        <RoadmapSection />
-      </div>
-
-      <div className="section-divider">
-        <ProgressSection />
-      </div>
 
       <div className="section-divider">
         <KnowledgeNotesWorkspace selectedDayNum={activeDay} />
