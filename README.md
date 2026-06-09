@@ -26,8 +26,7 @@ App runs at `http://localhost:5173`. In development, API requests are proxied to
 
 **Local dev:** leave `VITE_API_URL` empty — Vite proxies `/api` and `/uploads`.
 
-**Production:** set to your **Render** backend URL, e.g. `https://system-design-todobackend.onrender.com`.  
-Do **not** use a `*.vercel.app` URL for the API — the backend must be on Render.
+**Production:** `https://system-design-todobackend-1.onrender.com` (also set in `.env.production` and `vercel.json`).
 
 ## Scripts
 
@@ -43,7 +42,8 @@ Do **not** use a `*.vercel.app` URL for the API — the backend must be on Rende
 2. Framework preset: **Vite**
 3. Build command: `npm run build`
 4. Output directory: `dist`
-5. Environment variable: `VITE_API_URL` = your backend URL (no trailing slash)
+5. Environment variable (optional — already in `vercel.json`):
+   `VITE_API_URL=https://system-design-todobackend-1.onrender.com`
 6. Deploy
 
 `vercel.json` handles SPA routing.
@@ -61,9 +61,9 @@ After deploying frontend and [backend](https://github.com/kammari-venkatesh/syst
 
 | Service | Variable | Value |
 |---------|----------|-------|
-| Frontend | `VITE_API_URL` | `https://your-api.onrender.com` |
-| Backend | `FRONTEND_URL` | `https://your-app.vercel.app` |
-| Backend | `PUBLIC_URL` | `https://your-api.onrender.com` |
+| Frontend | `VITE_API_URL` | `https://system-design-todobackend-1.onrender.com` |
+| Backend | `FRONTEND_URL` | `https://*.vercel.app` (auto-default) or your exact Vercel URL |
+| Backend | `PUBLIC_URL` | Auto from Render (`https://system-design-todobackend-1.onrender.com`) |
 | Backend | `NODE_ENV` | `production` |
 | Backend | `MONGO_URI` | MongoDB Atlas connection string |
 | Backend | `JWT_SECRET` | Long random secret |
