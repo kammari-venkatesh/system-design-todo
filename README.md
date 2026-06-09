@@ -2,11 +2,11 @@
 
 React + Vite app for a 120-day system design study plan: dashboard (graph, calendar, tasks), roadmap, progress analytics, and knowledge notes with per-subtopic editing.
 
-> Deploy **this repo on Vercel only**. The API runs on **Render** — see [backend DEPLOY.md](https://github.com/kammari-venkatesh/system-design-todobackend/blob/main/DEPLOY.md).
+> Deploy **this repo on Render (Static Site)** or Vercel. The API runs on [system-design-todobackend](https://github.com/kammari-venkatesh/system-design-todobackend) — see [DEPLOY.md](./DEPLOY.md).
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 20+
 
 ## Setup
 
@@ -26,7 +26,7 @@ App runs at `http://localhost:5173`. In development, API requests are proxied to
 
 **Local dev:** leave `VITE_API_URL` empty — Vite proxies `/api` and `/uploads`.
 
-**Production:** `https://system-design-todobackend-1.onrender.com` (also set in `.env.production` and `vercel.json`).
+**Production:** `https://system-design-todobackend-1.onrender.com`
 
 ## Scripts
 
@@ -35,43 +35,38 @@ App runs at `http://localhost:5173`. In development, API requests are proxied to
 | `npm run dev` | Development server |
 | `npm run build` | Production build to `dist/` |
 | `npm run preview` | Preview production build locally |
+| `npm start` | Serve `dist/` (Render Web Service only) |
 
-## Deploy (Vercel)
+## Deploy on Render (recommended)
 
-1. Import [system-design-todo](https://github.com/kammari-venkatesh/system-design-todo) on [Vercel](https://vercel.com).
-2. Framework preset: **Vite**
-3. Build command: `npm run build`
-4. Output directory: `dist`
-5. Environment variable (optional — already in `vercel.json`):
-   `VITE_API_URL=https://system-design-todobackend-1.onrender.com`
-6. Deploy
+See **[DEPLOY.md](./DEPLOY.md)** for full steps.
 
-`vercel.json` handles SPA routing.
+**Quick setup — Static Site:**
 
-## Deploy (Netlify)
+1. Render → **New** → **Static Site** → repo `system-design-todo`
+2. Build: `npm ci && npm run build` · Publish: `dist`
+3. Env: `VITE_API_URL=https://system-design-todobackend-1.onrender.com`
+4. Rewrite: `/*` → `/index.html`
 
-1. Build command: `npm run build`
-2. Publish directory: `dist`
-3. Set `VITE_API_URL` in environment variables
-4. `netlify.toml` handles SPA redirects
+**Web Service** (if already created): Build `npm ci && npm run build` · Start `npm start`
+
+## Deploy on Vercel (alternative)
+
+1. Import [system-design-todo](https://github.com/kammari-venkatesh/system-design-todo) on Vercel
+2. `VITE_API_URL` is already in `vercel.json`
 
 ## Production checklist
 
-After deploying frontend and [backend](https://github.com/kammari-venkatesh/system-design-todobackend):
-
 | Service | Variable | Value |
 |---------|----------|-------|
-| Frontend | `VITE_API_URL` | `https://system-design-todobackend-1.onrender.com` |
-| Backend | `FRONTEND_URL` | `https://*.vercel.app` (auto-default) or your exact Vercel URL |
-| Backend | `PUBLIC_URL` | Auto from Render (`https://system-design-todobackend-1.onrender.com`) |
-| Backend | `NODE_ENV` | `production` |
-| Backend | `MONGO_URI` | MongoDB Atlas connection string |
-| Backend | `JWT_SECRET` | Long random secret |
+| Frontend (Render) | `VITE_API_URL` | `https://system-design-todobackend-1.onrender.com` |
+| Backend (Render) | `FRONTEND_URL` | Your frontend URL, e.g. `https://system-design-todo.onrender.com` |
+| Backend | `MONGO_URI`, `JWT_SECRET`, `NODE_ENV=production` | Required |
 
-Run `npm run seed` once on the backend after first deploy to load the study plan.
+Run `npm run seed` once on the backend after first deploy.
 
 ## Features
 
 - **Dashboard** — progress graph, calendar, daily tasks, knowledge notes
 - **Roadmap / Progress** — separate pages with study plan and analytics
-- **Knowledge notes** — per-day summary + one note per study subtopic (auto-created from plan tasks), auto-saved to MongoDB
+- **Knowledge notes** — per-day summary + one note per study subtopic, auto-saved to MongoDB
