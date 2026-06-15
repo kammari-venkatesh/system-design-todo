@@ -9,6 +9,7 @@ export default function WeekCard({
   dayDone,
   bookmarks = [],
   daysDoneLabel,
+  planStartDate,
   onToggleWeek,
   onToggleCheck,
   onToggleDayDone,
@@ -48,6 +49,7 @@ export default function WeekCard({
                 day={day}
                 checked={checked}
                 dayDone={dayDone}
+                planStartDate={planStartDate}
                 isBookmarked={bookmarks.includes(day._n)}
                 onToggleCheck={(key, val) => onToggleCheck(key, val, day._n)}
                 onToggleDayDone={onToggleDayDone}

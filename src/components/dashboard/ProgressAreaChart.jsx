@@ -23,11 +23,12 @@ function CustomTooltip({ active, payload }) {
 
 export default function ProgressAreaChart({ allDays = [] }) {
   const data = buildProgressChartData(allDays);
+  const totalDays = allDays.length || 126;
 
   return (
     <div className="card chart-card">
       <h2>Study Progress</h2>
-      <p className="subtitle">Day 1 → Day 120 · cumulative completion</p>
+      <p className="subtitle">Day 1 → Day {totalDays} · cumulative completion</p>
       <ResponsiveContainer width="100%" height={260}>
         <AreaChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
           <defs>
@@ -48,7 +49,7 @@ export default function ProgressAreaChart({ allDays = [] }) {
             tick={{ fontSize: 11, fill: theme.textMuted }}
             tickLine={false}
             axisLine={false}
-            domain={[0, 120]}
+            domain={[0, totalDays]}
           />
           <Tooltip content={<CustomTooltip />} />
           <Area

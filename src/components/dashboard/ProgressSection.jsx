@@ -55,7 +55,7 @@ export default function ProgressSection() {
 
       <p className="section-title">Overall</p>
       <div className="stat-grid">
-        <div className="stat-item"><strong>120</strong><span>Total days</span></div>
+        <div className="stat-item"><strong>{analytics.totalPlanDays ?? analytics.allDays?.length ?? 126}</strong><span>Total days</span></div>
         <div className="stat-item"><strong>{analytics.daysCompleted}</strong><span>Completed</span></div>
         <div className="stat-item"><strong>{analytics.daysRemaining}</strong><span>Remaining</span></div>
         <div className="stat-item"><strong>{analytics.streaks.current}</strong><span>Current streak</span></div>

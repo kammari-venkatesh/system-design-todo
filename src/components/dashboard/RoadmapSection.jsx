@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useProgress } from '../../context/ProgressContext';
 import WeekCard from '../WeekCard';
-import { phaseWeeks, weekDone } from '../../utils/planHelpers';
+import { phaseWeeks, weekDone, getTotalPlanDays } from '../../utils/planHelpers';
+import { dayNumToDate } from '../../utils/schedule';
 
 export default function RoadmapSection() {
-  const { phases, plan, progress, loading, toggleCheck, toggleDayDone, toggleBookmark } = useProgress();
+  const { phases, plan, progress, analytics, loading, toggleCheck, toggleDayDone, toggleBookmark } = useProgress();
   const [openPhases, setOpenPhases] = useState(new Set());
   const [openWeeks, setOpenWeeks] = useState(new Set());
   const [search, setSearch] = useState('');
@@ -56,13 +57,17 @@ export default function RoadmapSection() {
     return `${done}/${week.days.length} days`;
   }
 
+  const totalDays = analytics?.totalPlanDays ?? getTotalPlanDays(plan);
+  const totalWeeks = plan.length;
+  const planStartDate = analytics?.planStartDate;
+
   if (loading) return <div className="loading-text">Loading roadmap…</div>;
 
   return (
     <div className="dashboard-section" id="roadmap">
       <div className="section-header">
         <h2>Study Roadmap</h2>
-        <p className="subtitle">4–5 months · 120 study days · 6 phases</p>
+        <p className="subtitle">4–5 months · {totalDays} study days · {totalWeeks} weeks · 6 phases</p>
       </div>
 
       <div className="search-bar">
@@ -119,6 +124,7 @@ export default function RoadmapSection() {
                         dayDone={progress.dayDone}
                         bookmarks={progress.bookmarks}
                         daysDoneLabel={weekDaysDone(week)}
+                        planStartDate={planStartDate}
                         onToggleWeek={toggleWeek}
                         onToggleCheck={toggleCheck}
                         onToggleDayDone={toggleDayDone}

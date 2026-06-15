@@ -28,6 +28,7 @@ export default function TodayTasksPanel({ dayNum, onDayChange, onOpenNotes }) {
   const [achievement, setAchievement] = useState(null);
   const intervalRef = useRef(null);
 
+  const totalDays = analytics?.totalPlanDays ?? analytics?.allDays?.length ?? 126;
   const day = analytics?.allDays?.find((d) => d._n === dayNum) || analytics?.currentDay;
   const dn = day?._n;
   const isDone = !!progress.dayDone[`d${dn}`] || day?.status === 'completed';
@@ -80,7 +81,7 @@ export default function TodayTasksPanel({ dayNum, onDayChange, onOpenNotes }) {
         {onDayChange && (
           <div className="tasks-panel-nav">
             <button className="btn-secondary" disabled={dn <= 1} onClick={() => onDayChange(dn - 1)}>← Prev</button>
-            <button className="btn-secondary" disabled={dn >= 120} onClick={() => onDayChange(dn + 1)}>Next →</button>
+            <button className="btn-secondary" disabled={dn >= totalDays} onClick={() => onDayChange(dn + 1)}>Next →</button>
           </div>
         )}
       </div>

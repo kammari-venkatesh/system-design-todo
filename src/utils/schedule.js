@@ -1,12 +1,9 @@
 import { addDays, startOfDay, format, parseISO, isSunday } from 'date-fns';
 
-/** Next Monday on or after `from`. If today is Monday, returns today. */
-export function computePlanStartDate(from = new Date()) {
-  const today = startOfDay(from);
-  const dow = today.getDay(); // 0=Sun, 1=Mon, ...
-  if (dow === 1) return today;
-  if (dow === 0) return addDays(today, 1);
-  return addDays(today, 8 - dow);
+export const PLAN_START_DATE = '2026-06-15';
+
+export function computePlanStartDate() {
+  return startOfDay(parseISO(PLAN_START_DATE));
 }
 
 export function dayNumToDate(dayNum, planStart) {
@@ -21,7 +18,7 @@ export function dayNumToDate(dayNum, planStart) {
   return date;
 }
 
-export function dateToDayNum(date, planStart) {
+export function dateToDayNum(date, planStart, maxDays = Infinity) {
   const start = startOfDay(typeof planStart === 'string' ? parseISO(planStart) : planStart);
   const target = startOfDay(date);
   if (target < start) return null;
@@ -32,7 +29,7 @@ export function dateToDayNum(date, planStart) {
   while (current < target) {
     current = addDays(current, 1);
     if (!isSunday(current)) num += 1;
-    if (num > 120) return null;
+    if (num > maxDays) return null;
   }
   return num;
 }
@@ -67,7 +64,7 @@ export function buildScheduleMap(allDays, planStart, checked = {}, dayDone = {})
   return map;
 }
 
-export function getTodayStudyDayNum(planStart) {
+export function getTodayStudyDayNum(planStart, maxDays = Infinity) {
   const today = startOfDay(new Date());
-  return dateToDayNum(today, planStart);
+  return dateToDayNum(today, planStart, maxDays);
 }

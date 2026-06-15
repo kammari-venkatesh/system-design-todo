@@ -30,7 +30,7 @@ export default function DashboardPage() {
         <div>
           <h1>Dashboard</h1>
           <p className="subtitle">
-            Day {analytics.currentDayNum} of 120 · {analytics.overallProgress}% complete
+            Day {analytics.currentDayNum} of {analytics.totalPlanDays ?? analytics.allDays?.length ?? 126} · {analytics.overallProgress}% complete
           </p>
         </div>
       </div>

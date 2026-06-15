@@ -1,10 +1,13 @@
+import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { dayNumToDate } from '../utils/schedule';
 
 export default function DayRow({
   day,
   checked,
   dayDone,
   isBookmarked,
+  planStartDate,
   onToggleCheck,
   onToggleDayDone,
   onToggleBookmark,
@@ -12,11 +15,15 @@ export default function DayRow({
   const dn = day._n;
   const isDone = dayDone[`d${dn}`];
   const topicClass = isDone ? 'day-topic done-text' : 'day-topic';
+  const calendarLabel = planStartDate
+    ? format(dayNumToDate(dn, planStartDate), 'MMM d')
+    : null;
 
   return (
     <div className={`day-row ${isDone ? 'done' : ''}`}>
       <div className="day-lbl">
         {day.lbl}
+        {calendarLabel && <div className="day-date">{calendarLabel}</div>}
         <div className="day-num">D{dn}</div>
       </div>
       <div className="day-content">

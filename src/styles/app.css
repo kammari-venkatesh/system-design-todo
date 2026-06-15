@@ -314,6 +314,7 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
 .day-row:last-child { border-bottom: none; }
 .day-row.done { box-shadow: inset 3px 0 0 var(--primary); }
 .day-lbl { width: 40px; font-size: 11px; font-weight: 700; color: var(--text-light); padding-top: 2px; flex-shrink: 0; text-align: center; }
+.day-date { font-size: 9px; color: var(--primary); margin-top: 2px; font-weight: 600; }
 .day-num { font-size: 9px; color: var(--text-light); margin-top: 2px; }
 .day-content { flex: 1; min-width: 0; }
 .day-topic { font-size: 14px; font-weight: 600; margin-bottom: 8px; line-height: 1.4; color: var(--text); }
