@@ -47,7 +47,7 @@ export default function NotesMasterList({
         />
       </div>
 
-      <div className="notes-master-list" ref={listRef}>
+      <div className="notes-master-list ios-scroll" ref={listRef}>
         {!notes.length ? (
           <div className="notes-master-empty">
             {selectedDayNum

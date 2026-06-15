@@ -478,6 +478,57 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
 }
 .dashboard-jump-nav a:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
 
+/* ─── iOS-style smooth scroll ─── */
+.ios-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+
+.ios-scroll::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.ios-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ios-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(15, 23, 42, 0.18);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  min-height: 40px;
+}
+
+.ios-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(15, 23, 42, 0.32);
+  background-clip: padding-box;
+}
+
+.ios-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.22) transparent;
+}
+
+[data-theme="dark"] .ios-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.22);
+  background-clip: padding-box;
+}
+
+[data-theme="dark"] .ios-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.36);
+  background-clip: padding-box;
+}
+
+[data-theme="dark"] .ios-scroll {
+  scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
+}
+
 /* ─── Knowledge Notes — Apple Notes layout ─── */
 .notes-app-wrap { scroll-margin-top: 24px; }
 .notes-app-header { margin-bottom: 16px; }
@@ -487,10 +538,16 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
   display: grid;
   grid-template-columns: 300px 1fr;
   min-height: 620px;
-  max-height: 720px;
+  max-height: min(720px, 72vh);
   padding: 0;
   overflow: hidden;
   border-radius: var(--radius-lg);
+}
+
+.notes-app > .notes-master,
+.notes-app > .notes-detail {
+  min-height: 0;
+  max-height: 100%;
 }
 
 /* Note list */
@@ -519,7 +576,10 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
   color: var(--text);
 }
 .notes-master-search input:focus { outline: none; background: var(--primary-light); }
-.notes-master-list { flex: 1; overflow-y: auto; }
+.notes-master-list {
+  flex: 1;
+  min-height: 0;
+}
 .notes-master-empty {
   padding: 32px 20px;
   text-align: center;
@@ -641,6 +701,7 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
   flex-direction: column;
   background: #fff;
   overflow: hidden;
+  min-height: 0;
 }
 .notes-detail-empty {
   align-items: center;
@@ -663,7 +724,7 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
 }
 .notes-detail-body {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
   padding: 24px 32px 40px;
   max-width: 720px;
   margin: 0 auto;
@@ -673,8 +734,11 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
   padding: 16px 24px 32px;
   max-width: none;
 }
-.notes-detail-body--blank .rich-editor { min-height: 480px; }
-.notes-detail-body--blank .tiptap-editor-inner { min-height: 440px; font-size: 16px; }
+.notes-detail-body--blank .rich-editor { min-height: 0; }
+.notes-detail-body--blank .tiptap-editor-inner {
+  min-height: 120px;
+  font-size: 16px;
+}
 .rich-editor {
   background: #fff;
   border-radius: 8px;
@@ -754,7 +818,14 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
     grid-template-rows: auto 1fr;
     max-height: none;
   }
-  .notes-master { max-height: 280px; border-right: none; border-bottom: 1px solid var(--border); }
+  .notes-master {
+    max-height: 280px;
+    min-height: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .notes-master-list { min-height: 0; }
+  .notes-detail { min-height: 400px; max-height: min(520px, 60vh); }
   .notes-detail-body { padding: 20px 16px 32px; }
 }
 
