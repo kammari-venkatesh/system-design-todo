@@ -478,56 +478,61 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
 }
 .dashboard-jump-nav a:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
 
-/* ─── iOS-style smooth scroll ─── */
-.ios-scroll {
-  overflow-y: auto;
+/* ─── iOS-style notes scroll (always-visible thin pill) ─── */
+.notes-scroll-pane {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 0;
   overflow-x: hidden;
+  overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   overscroll-behavior-y: contain;
+  touch-action: pan-y;
   scrollbar-gutter: stable;
+  padding-right: 2px;
 }
 
-.ios-scroll::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+.notes-scroll-pane::-webkit-scrollbar {
+  width: 8px;
 }
 
-.ios-scroll::-webkit-scrollbar-track {
-  background: transparent;
+.notes-scroll-pane::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.06);
+  border-radius: 999px;
+  margin: 6px 2px;
 }
 
-.ios-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(15, 23, 42, 0.18);
+.notes-scroll-pane::-webkit-scrollbar-thumb {
+  background-color: rgba(15, 23, 42, 0.28);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
-  min-height: 40px;
+  min-height: 48px;
 }
 
-.ios-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(15, 23, 42, 0.32);
-  background-clip: padding-box;
+.notes-scroll-pane::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(15, 23, 42, 0.42);
 }
 
-.ios-scroll {
+.notes-scroll-pane {
   scrollbar-width: thin;
-  scrollbar-color: rgba(15, 23, 42, 0.22) transparent;
+  scrollbar-color: rgba(15, 23, 42, 0.32) rgba(15, 23, 42, 0.08);
 }
 
-[data-theme="dark"] .ios-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.22);
-  background-clip: padding-box;
+[data-theme="dark"] .notes-scroll-pane::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .ios-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.36);
-  background-clip: padding-box;
+[data-theme="dark"] .notes-scroll-pane::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.32);
 }
 
-[data-theme="dark"] .ios-scroll {
-  scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
+[data-theme="dark"] .notes-scroll-pane {
+  scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.1);
 }
+
+.ios-scroll { overflow-y: scroll; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
 
 /* ─── Knowledge Notes — Apple Notes layout ─── */
 .notes-app-wrap { scroll-margin-top: 24px; }
@@ -537,8 +542,8 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
 .notes-app {
   display: grid;
   grid-template-columns: 300px 1fr;
-  min-height: 620px;
-  max-height: min(720px, 72vh);
+  grid-template-rows: minmax(0, 1fr);
+  height: clamp(520px, 72vh, 720px);
   padding: 0;
   overflow: hidden;
   border-radius: var(--radius-lg);
@@ -547,7 +552,8 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
 .notes-app > .notes-master,
 .notes-app > .notes-detail {
   min-height: 0;
-  max-height: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Note list */
@@ -557,14 +563,16 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
   flex-direction: column;
   background: #fff;
   overflow: hidden;
+  min-height: 0;
 }
 .notes-master-header {
+  flex-shrink: 0;
   padding: 16px 16px 8px;
   border-bottom: 1px solid var(--border);
 }
 .notes-master-header h3 { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
 .notes-master-count { font-size: 12px; color: var(--text-muted); }
-.notes-master-search { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.notes-master-search { flex-shrink: 0; padding: 8px 12px; border-bottom: 1px solid var(--border); }
 .notes-master-search input {
   width: 100%;
   padding: 7px 10px;
@@ -577,8 +585,7 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
 }
 .notes-master-search input:focus { outline: none; background: var(--primary-light); }
 .notes-master-list {
-  flex: 1;
-  min-height: 0;
+  /* scroll via .notes-scroll-pane */
 }
 .notes-master-empty {
   padding: 32px 20px;
@@ -715,41 +722,52 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
 .notes-detail-empty-inner span { font-size: 13px; }
 .notes-detail-toolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
   padding: 10px 20px;
   border-bottom: 1px solid var(--border);
   min-height: 44px;
   background: #FAFBFC;
+  z-index: 2;
 }
 .notes-detail-body {
-  flex: 1;
-  min-height: 0;
+  /* scroll via .notes-scroll-pane */
   padding: 24px 32px 40px;
   max-width: 720px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 .notes-detail-body--blank {
   padding: 16px 24px 32px;
   max-width: none;
 }
-.notes-detail-body--blank .rich-editor { min-height: 0; }
+.notes-detail-body--blank .rich-editor { min-height: 0; overflow: visible; }
+.notes-detail-body--blank .tiptap,
+.notes-detail-body--blank .ProseMirror {
+  overflow: visible;
+  height: auto;
+  min-height: 120px;
+}
 .notes-detail-body--blank .tiptap-editor-inner {
   min-height: 120px;
   font-size: 16px;
 }
-.rich-editor {
-  background: #fff;
-  border-radius: 8px;
-}
 .notes-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
   padding: 6px 0 10px;
   border-bottom: none;
-  background: transparent;
+  background: #fff;
+}
+.rich-editor {
+  background: #fff;
+  border-radius: 8px;
 }
 .notes-toolbar-btn {
   font-size: 12px;
@@ -815,17 +833,13 @@ h3 { font-size: 15px; font-weight: 600; color: var(--text); }
 @media (max-width: 900px) {
   .notes-app {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-    max-height: none;
+    grid-template-rows: minmax(0, 240px) minmax(0, 1fr);
+    height: clamp(640px, 85vh, 900px);
   }
   .notes-master {
-    max-height: 280px;
-    min-height: 0;
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
-  .notes-master-list { min-height: 0; }
-  .notes-detail { min-height: 400px; max-height: min(520px, 60vh); }
   .notes-detail-body { padding: 20px 16px 32px; }
 }
 

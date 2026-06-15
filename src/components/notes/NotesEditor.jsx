@@ -36,7 +36,7 @@ export default function NotesEditor({
         <span className="notes-detail-kind">{isSummary ? 'Summary' : 'Subtopic note'}</span>
         <SaveStatus status={saveStatus} lastSavedAt={lastSavedAt} />
       </div>
-      <div className="notes-detail-body notes-detail-body--blank ios-scroll">
+      <div className="notes-detail-body notes-detail-body--blank notes-scroll-pane">
         {isSummary ? (
           <div className="notes-summary-editor">
             <h2 className="notes-summary-topic">{note.topic}</h2>
