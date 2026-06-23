@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useProgress } from '../../context/ProgressContext';
 import WeekCard from '../WeekCard';
 import { phaseWeeks, weekDone, getTotalPlanDays } from '../../utils/planHelpers';
-import { dayNumToDate } from '../../utils/schedule';
 
 export default function RoadmapSection() {
   const { phases, plan, progress, analytics, loading, toggleCheck, toggleDayDone, toggleBookmark } = useProgress();
@@ -125,6 +124,7 @@ export default function RoadmapSection() {
                         bookmarks={progress.bookmarks}
                         daysDoneLabel={weekDaysDone(week)}
                         planStartDate={planStartDate}
+                        totalPlanDays={totalDays}
                         onToggleWeek={toggleWeek}
                         onToggleCheck={toggleCheck}
                         onToggleDayDone={toggleDayDone}

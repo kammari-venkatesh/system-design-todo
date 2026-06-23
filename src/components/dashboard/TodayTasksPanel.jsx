@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { api } from '../../api/client';
 import { useProgress } from '../../context/ProgressContext';
@@ -21,7 +21,7 @@ function TaskCheckItem({ task, checked, onToggle }) {
   );
 }
 
-export default function TodayTasksPanel({ dayNum, onDayChange, onOpenNotes }) {
+export default function TodayTasksPanel({ dayNum, onDayChange, onOpenNotes, switching = false }) {
   const { analytics, progress, toggleCheck, toggleDayDone } = useProgress();
   const [timerRunning, setTimerRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -73,7 +73,28 @@ export default function TodayTasksPanel({ dayNum, onDayChange, onOpenNotes }) {
   }
 
   return (
-    <div className="card tasks-panel">
+    <div className="card tasks-panel tasks-panel-wrap">
+      <AnimatePresence mode="wait">
+        {switching ? (
+          <motion.div
+            key="loading"
+            className="tasks-panel-loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <div className="tasks-panel-spinner" aria-hidden="true" />
+            <span>Loading topics…</span>
+          </motion.div>
+        ) : (
+          <motion.div
+            key={dn}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.28, ease: 'easeOut' }}
+          >
       <div className="tasks-panel-header">
         <div className="tasks-panel-day">Day {dn} · Week {day.week} · Phase {day.phase}</div>
         <div className="tasks-panel-topic">{day.topic}</div>
@@ -154,6 +175,9 @@ export default function TodayTasksPanel({ dayNum, onDayChange, onOpenNotes }) {
       {achievement && (
         <AchievementToast achievement={achievement} onClose={() => setAchievement(null)} />
       )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

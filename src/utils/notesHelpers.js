@@ -1,4 +1,13 @@
-import { dayNumToDate } from './schedule';
+import { calendarDateForPlanDay, dayNumToDate } from './schedule';
+
+function noteCalendarDate(note, planStartDate, dayDone, totalPlanDays) {
+  if (!note.dayNum || !planStartDate) return null;
+  if (dayDone != null && totalPlanDays != null) {
+    return calendarDateForPlanDay(note.dayNum, planStartDate, dayDone, totalPlanDays)
+      ?? dayNumToDate(note.dayNum, planStartDate);
+  }
+  return dayNumToDate(note.dayNum, planStartDate);
+}
 
 export const DAILY_SECTIONS = [
   { key: 'keyConcepts', label: 'Key Concepts', hint: 'Things learned today.' },
@@ -151,11 +160,12 @@ export function searchNotes(notes, query) {
   });
 }
 
-export function sortNotesForDisplay(notes, categoryId, planStartDate) {
+export function sortNotesForDisplay(notes, categoryId, planStartDate, dayDone, totalPlanDays) {
   const filtered = filterNotesByCategory(notes, categoryId);
   return filtered.sort((a, b) => {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-    return getNoteSortDate(b, planStartDate) - getNoteSortDate(a, planStartDate);
+    return getNoteSortDate(b, planStartDate, dayDone, totalPlanDays)
+      - getNoteSortDate(a, planStartDate, dayDone, totalPlanDays);
   });
 }
 
@@ -295,17 +305,15 @@ export function journalGroupLabel(updatedAt) {
   return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
 
-export function getNoteSortDate(note, planStartDate) {
-  if (note.dayNum && planStartDate) {
-    return dayNumToDate(note.dayNum, planStartDate);
-  }
+export function getNoteSortDate(note, planStartDate, dayDone, totalPlanDays) {
+  const d = noteCalendarDate(note, planStartDate, dayDone, totalPlanDays);
+  if (d) return d;
   return new Date(note.updatedAt || note.createdAt || Date.now());
 }
 
-export function formatNoteDisplayDate(note, planStartDate) {
-  let d = note.dayNum && planStartDate
-    ? dayNumToDate(note.dayNum, planStartDate)
-    : new Date(note.updatedAt || Date.now());
+export function formatNoteDisplayDate(note, planStartDate, dayDone, totalPlanDays) {
+  const d = noteCalendarDate(note, planStartDate, dayDone, totalPlanDays)
+    ?? new Date(note.updatedAt || Date.now());
   const datePart = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   const timePart = new Date(note.updatedAt || d).toLocaleTimeString('en-US', {
     hour: 'numeric',
@@ -315,10 +323,9 @@ export function formatNoteDisplayDate(note, planStartDate) {
   return `${datePart} at ${timePart}`;
 }
 
-export function formatNoteListDate(note, planStartDate) {
-  const d = note.dayNum && planStartDate
-    ? dayNumToDate(note.dayNum, planStartDate)
-    : new Date(note.updatedAt || Date.now());
+export function formatNoteListDate(note, planStartDate, dayDone, totalPlanDays) {
+  const d = noteCalendarDate(note, planStartDate, dayDone, totalPlanDays)
+    ?? new Date(note.updatedAt || Date.now());
   const now = new Date();
   const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / (1000 * 60 * 60 * 24));
   if (diffDays === 0) {
@@ -335,10 +342,9 @@ function startOfDay(d) {
   return x;
 }
 
-export function periodLabelForNote(note, planStartDate) {
-  const d = note.dayNum && planStartDate
-    ? dayNumToDate(note.dayNum, planStartDate)
-    : new Date(note.updatedAt || Date.now());
+export function periodLabelForNote(note, planStartDate, dayDone, totalPlanDays) {
+  const d = noteCalendarDate(note, planStartDate, dayDone, totalPlanDays)
+    ?? new Date(note.updatedAt || Date.now());
   const now = new Date();
   const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / (1000 * 60 * 60 * 24));
   if (diffDays <= 0) return 'Today';
@@ -348,13 +354,14 @@ export function periodLabelForNote(note, planStartDate) {
   return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
 
-export function groupNotesByPeriod(notes, planStartDate) {
+export function groupNotesByPeriod(notes, planStartDate, dayDone, totalPlanDays) {
   const map = new Map();
   const order = ['Today', 'Yesterday', 'Previous 7 Days', 'Previous 30 Days'];
   [...notes]
-    .sort((a, b) => getNoteSortDate(b, planStartDate) - getNoteSortDate(a, planStartDate))
+    .sort((a, b) => getNoteSortDate(b, planStartDate, dayDone, totalPlanDays)
+      - getNoteSortDate(a, planStartDate, dayDone, totalPlanDays))
     .forEach((note) => {
-      const label = periodLabelForNote(note, planStartDate);
+      const label = periodLabelForNote(note, planStartDate, dayDone, totalPlanDays);
       if (!map.has(label)) map.set(label, []);
       map.get(label).push(note);
     });

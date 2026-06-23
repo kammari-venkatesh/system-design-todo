@@ -3,12 +3,14 @@ import AppleCalendar from '../components/dashboard/AppleCalendar';
 import TodayTasksPanel from '../components/dashboard/TodayTasksPanel';
 import KnowledgeNotesWorkspace from '../components/notes/KnowledgeNotesWorkspace';
 import { useSelectedDay } from '../hooks/useSelectedDay';
+import { useProgress } from '../context/ProgressContext';
 
 export default function DashboardPage() {
-  const { analytics, loading, activeDay, handleSelectDay } = useSelectedDay();
+  const { analytics, loading, activeDay, selectedDateKey, isDaySwitching, handleSelectDayFromCalendar, handleSelectDayByNum } = useSelectedDay();
+  const { progress } = useProgress();
 
   function openNotesForDay(dayNum) {
-    handleSelectDay(dayNum);
+    handleSelectDayByNum(dayNum);
     setTimeout(() => {
       document.getElementById('notes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
@@ -49,17 +51,15 @@ export default function DashboardPage() {
             heatmap={analytics.heatmap}
             allDays={analytics.allDays}
             planStartDate={analytics.planStartDate}
-            selectedDayNum={activeDay}
-            onSelectDay={(dayNum) => {
-              handleSelectDay(dayNum);
-              setTimeout(() => {
-                document.getElementById('notes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 80);
-            }}
+            dayDone={progress.dayDone}
+            totalPlanDays={analytics.totalPlanDays ?? analytics.allDays?.length}
+            selectedDateKey={selectedDateKey}
+            onSelectDay={handleSelectDayFromCalendar}
           />
           <TodayTasksPanel
             dayNum={activeDay}
-            onDayChange={handleSelectDay}
+            switching={isDaySwitching}
+            onDayChange={handleSelectDayByNum}
             onOpenNotes={() => openNotesForDay(activeDay)}
           />
         </div>
